@@ -7,14 +7,12 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
-    "dev": "movieapp-frontend/node_modules/.bin/vite",
-    "build": "movieapp-frontend/node_modules/.bin/run-p type-check \"build-only {@}\" --",
-    "preview": "movieapp-frontend/node_modules/.bin/vite preview",
-    "test:unit": "movieapp-frontend/node_modules/.bin/vitest",
-    "build-only": "movieapp-frontend/node_modules/.bin/vite build",
-    "type-check": "movieapp-frontend/node_modules/.bin/vue-tsc --build",
-    "lint": "movieapp-frontend/node_modules/.bin/eslint . --fix --cache",
-    "format": "movieapp-frontend/node_modules/.bin/prettier --write ../src/"
+    "dev": "vite",
+    "build": "vue-tsc --build && vite build",
+    "preview": "vite preview",
+    "test:unit": "vitest",
+    "lint": "eslint . --fix --cache",
+    "format": "prettier --write src/"
   },
   "dependencies": {
     "vue": "^3.5.22",
