@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import MovieList from './components/MovieList.vue'
+import MovieListAPI from './components/MovieAPI.vue'
+
 </script>
 
 <template>
@@ -8,7 +9,7 @@ import MovieList from './components/MovieList.vue'
       <h1>My Movie App</h1>
     </header>
     <main>
-      <MovieList />
+      <MovieAPI />
     </main>
   </div>
 </template>
