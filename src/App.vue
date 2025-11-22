@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import MovieListAPI from './components/MovieAPI.vue'
+import MovieAPI from './components/MovieAPI.vue'
 
 </script>
 
