@@ -10,6 +10,12 @@ export interface Movie {
 defineProps<{
   movie: Movie
 }>()
+
+const emit = defineEmits<{
+(e: 'delete', id: number): void
+
+}>()
+
 </script>
 
 <template>
@@ -20,6 +26,10 @@ defineProps<{
       <span class="rating-value">{{ movie.rating }}/5</span>
     </div>
     <p class="movie-review">{{ movie.review }}</p>
+
+    <button class="delete-btn" @click="emit('delete', movie.id)">
+      Delete
+    </button>
   </div>
 </template>
 
@@ -63,5 +73,19 @@ defineProps<{
   margin: 0;
   color: #666;
   line-height: 1.5;
+}
+
+.delete-btn{
+  margin-top: 1rem;
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #e74c3c;
+  color: white;
+  cursor: pointer;
+}
+
+.delete-btn:hover{
+  background-color: #c0392b;
 }
 </style>

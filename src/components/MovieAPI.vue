@@ -7,14 +7,31 @@ import axios from 'axios'
 const movies = ref<Movie[]>([])
 const error = ref<string>('')
 
-onMounted(async () => {
+const API_BASE = 'https://backend-movieapp-mh3p.onrender.com/movies'
+
+
+async function fetchMovies() {
   try {
-    const response = await axios.get('https://backend-movieapp-mh3p.onrender.com/movies')
+    const response = await axios.get(API_BASE)
     movies.value = response.data
   } catch (err) {
     console.error('Failed to fetch movies:', err)
     error.value = 'Could not load movies. Please try again later.'
   }
+}
+async function deleteMovie(id: number) {
+  try {
+    await axios.delete(`${API_BASE}/${id}`)//remove from UI immediately
+    movies.value = movies.value.filter((m) => m.id !== id)
+  }
+  catch (err) {
+    console.error('Failed to delete movie:',err)
+    error.value = 'Could not delete movie. Please try again later.'
+  }
+}
+
+onMounted(() => {
+  fetchMovies()
 })
 </script>
 
@@ -25,7 +42,12 @@ onMounted(async () => {
     <div v-if="error" class="error">{{ error }}</div>
 
     <div v-else-if="movies.length > 0" class="movies-container">
-      <MovieItem v-for="movie in movies" :key="movie.id" :movie="movie" />
+      <MovieItem
+        v-for="movie in movies"
+        :key="movie.id"
+        :movie="movie"
+        @delete="deleteMovie"
+      />
     </div>
 
     <div v-else class="empty-state">
