@@ -2,6 +2,7 @@
 export interface Movie {
   id: number
   title: string
+  releaseYear: number
   rating: number
   review: string
 }
@@ -14,8 +15,8 @@ defineProps<{
 <template>
   <div class="movie-item">
     <h3 class="movie-title">{{ movie.title }}</h3>
-    <div class="movie-rating">
-      <span class="rating-label">Rating:</span>
+    <div class="movie-year">
+      <span class="rat">Rating:</span>
       <span class="rating-value">{{ movie.rating }}/5</span>
     </div>
     <p class="movie-review">{{ movie.review }}</p>
