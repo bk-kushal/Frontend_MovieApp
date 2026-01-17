@@ -7,24 +7,28 @@ const movies = ref<Movie[]>([
   {
     id: 1,
     title: 'The Shawshank Redemption',
+    releaseYear: 1994,
     rating: 5,
     review: 'An inspiring story about hope and friendship. One of the best films ever made.',
   },
   {
     id: 2,
     title: 'Inception',
+    releaseYear: 2010,
     rating: 5,
     review: 'Mind-bending thriller with stunning visuals. Christopher Nolan at his best.',
   },
   {
     id: 3,
     title: 'The Dark Knight',
+    releaseYear: 2010,
     rating: 5,
     review: "Heath Ledger's performance as the Joker is legendary. A masterpiece.",
   },
   {
     id: 4,
     title: 'Pulp Fiction',
+    releaseYear: 1994,
     rating: 4,
     review: 'Quentin Tarantino classic with great dialogue and non-linear storytelling.',
   },
