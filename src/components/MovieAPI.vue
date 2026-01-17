@@ -9,7 +9,7 @@ const error = ref<string>('')
 
 onMounted(async () => {
   try {
-    const response = await axios.get('https://backend-movieapp-mh3p.onrender.com/movies/movies')
+    const response = await axios.get('https://backend-movieapp-mh3p.onrender.com/movies')
     movies.value = response.data
   } catch (err) {
     console.error('Failed to fetch movies:', err)
