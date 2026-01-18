@@ -9,6 +9,11 @@ const error = ref<string>('')
 
 const API_BASE = 'https://backend-movieapp-mh3p.onrender.com/movies'
 
+//Login State
+const username = ref(localStorage.getItem('username') || '')
+const password = ref('')
+const isLoggedIn = ref(!!username.value)
+
 const title = ref('')
 const releaseYear = ref<number>(new Date().getFullYear())
 const rating = ref<number>(3)
@@ -22,6 +27,45 @@ function resetForm() {
   rating.value = 3
   review.value = ''
   editingId.value = null
+}
+
+//Auth
+async function register() {
+  try {
+    await axios.post(`${API_BASE}/auth/register`, {
+      username: username.value,
+      password: password.value,
+    })
+    error.value = 'Registered successfully! You can now login.'
+  } catch {
+    error.value = 'Registration failed'
+  }
+}
+
+async function login() {
+  try {
+    const res = await axios.post(`${API_BASE}/auth/login`, {
+      username: username.value,
+      password: password.value,
+    })
+
+    if (res.data === 'Login successful') {
+      localStorage.setItem('username', username.value)
+      isLoggedIn.value = true
+      fetchMovies()
+      error.value = ''
+    } else {
+      error.value = res.data
+    }
+  } catch {
+    error.value = 'Login failed'
+  }
+}
+
+function logout() {
+  localStorage.removeItem('username')
+  isLoggedIn.value = false
+  movies.value = []
 }
 
 
@@ -124,6 +168,19 @@ onMounted(() => {
 
 <template>
   <div class="movie-list">
+
+    <!---Login-->
+
+    <div v-if="!isLoggedIn" class="add-box">
+      <h3>Login / Register</h3>
+
+      <input class="input" v-model="username" placeholder="Username" />
+      <input class="input" v-model="password" type="password" placeholder="Password" />
+
+      <button class="add-btn" @click="login">Login</button>
+      <button class="cancel-btn" @click="register">Register</button>
+    </div>
+
     <h2 class="list-title">Movie List </h2>
 
     <div class = "add-box">
