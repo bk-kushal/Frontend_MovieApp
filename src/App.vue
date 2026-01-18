@@ -5,10 +5,13 @@ import MovieAPI from './components/MovieAPI.vue'
 
 <template>
   <div class="app">
-    <header class="app-header">
-      <h1>My Movie App</h1>
-    </header>
-    <main>
+    <div class="hero">
+      <header class="app-header">
+        <h1>My Movie App</h1>
+      </header>
+    </div>
+
+    <main class="content">
       <MovieAPI />
     </main>
   </div>
@@ -36,10 +39,28 @@ body {
 <style scoped>
 .app {
   min-height: 100vh;
+  background-color: #f5f6fa
+}
+
+.hero {
+  height: 320px; /* fixed height so it NEVER stretches */
   background-image: url('/detectiveLoki.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  position: relative;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
 }
 
 .app-header {
@@ -56,6 +77,10 @@ body {
 }
 
 main {
+  padding: 2rem 1rem;
+}
+
+.content {
   padding: 2rem 1rem;
 }
 </style>
