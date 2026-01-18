@@ -29,6 +29,7 @@ function setUser(u: AuthUser) {
 function logout() {
   user.value = null
   localStorage.removeItem('movieapp_user')
+  localStorage.removeItem('username')
   form.username = ''
   form.password = ''
   msg.value = ''
