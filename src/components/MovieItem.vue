@@ -13,6 +13,8 @@ defineProps<{
 
 const emit = defineEmits<{
 (e: 'delete', id: number): void
+  (e: 'edit', movie: Movie): void
+
 
 }>()
 
@@ -21,15 +23,23 @@ const emit = defineEmits<{
 <template>
   <div class="movie-item">
     <h3 class="movie-title">{{ movie.title }}</h3>
+
     <div class="movie-year">
       <span class="rat">Rating:</span>
       <span class="rating-value">{{ movie.rating }}/5</span>
     </div>
+
     <p class="movie-review">{{ movie.review }}</p>
 
-    <button class="delete-btn" @click="emit('delete', movie.id)">
-      Delete
-    </button>
+    <div class="btn-row">
+      <button class="edit-btn" @click="emit('edit', movie)">
+        Edit
+      </button>
+
+      <button class="delete-btn" @click="emit('delete', movie.id)">
+        Delete
+      </button>
+    </div>
   </div>
 </template>
 
@@ -75,8 +85,13 @@ const emit = defineEmits<{
   line-height: 1.5;
 }
 
-.delete-btn{
+.btn-row{
+  display: flex;
+  gap: 0.5rem;
   margin-top: 1rem;
+}
+
+.delete-btn{
   padding: 0.4rem 0.8rem;
   border: none;
   border-radius: 6px;
@@ -87,5 +102,17 @@ const emit = defineEmits<{
 
 .delete-btn:hover{
   background-color: #c0392b;
+}
+.edit-btn {
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #3498db;
+  color: white;
+  cursor: pointer;
+}
+
+.edit-btn:hover {
+  background-color: #2980b9;
 }
 </style>

@@ -13,6 +13,16 @@ const title = ref('')
 const releaseYear = ref<number>(new Date().getFullYear())
 const rating = ref<number>(3)
 const review = ref('')
+const editingId = ref<number | null>(null)
+
+
+function resetForm() {
+  title.value = ''
+  releaseYear.value = new Date().getFullYear()
+  rating.value = 3
+  review.value = ''
+  editingId.value = null
+}
 
 
 
@@ -42,15 +52,11 @@ async function createMovie(){
     const response = await axios.post(API_BASE, payload)
     movies.value.push(response.data)
 
-    title.value =''
-    releaseYear.value = new Date().getFullYear()
-    rating.value=3
-    review.value =''
-
+    resetForm()
     error.value =''
   } catch (err) {
     console.error('Failed to add movie:',err)
-    error.value = 'Coould not add movie. Please try again later.'
+    error.value = 'Could not add movie. Please try again later.'
   }
 
 }
@@ -58,11 +64,57 @@ async function deleteMovie(id: number) {
   try {
     await axios.delete(`${API_BASE}/${id}`)//remove from UI immediately
     movies.value = movies.value.filter((m) => m.id !== id)
+
+    if (editingId.value === id) resetForm()
+    error.value = ''
+
   }
+
   catch (err) {
     console.error('Failed to delete movie:',err)
     error.value = 'Could not delete movie. Please try again later.'
   }
+}
+//
+function startEdit(movie: Movie) {
+  editingId.value = movie.id
+  title.value = movie.title
+  releaseYear.value = movie.releaseYear
+  rating.value = movie.rating ?? 3
+  review.value = movie.review ?? ''
+}
+
+//
+async function updateMovie() {
+  try {
+    if (editingId.value === null) return
+
+    if (!title.value.trim()) {
+      error.value = 'Please enter a title.'
+      return
+    }
+
+    const payload = {
+      title: title.value,
+      releaseYear: releaseYear.value,
+      rating: rating.value,
+      review: review.value,
+    }
+
+    const response = await axios.put(`${API_BASE}/${editingId.value}`, payload)
+
+    //
+    movies.value = movies.value.map((m) => (m.id === editingId.value ? response.data : m))
+
+    resetForm()
+    error.value = ''
+  } catch (err) {
+    console.error('Failed to update movie:', err)
+    error.value = 'Could not update movie. Please try again later.'
+  }
+}
+function cancelEdit() {
+  resetForm()
 }
 
 onMounted(() => {
@@ -72,10 +124,12 @@ onMounted(() => {
 
 <template>
   <div class="movie-list">
-    <h2 class="list-title">Movie List (From Backend)</h2>
+    <h2 class="list-title">Movie List </h2>
 
     <div class = "add-box">
-      <h3 class="add-title">Add a Movie</h3>
+      <h3 class="add-title">
+        {{ editingId ? 'Edit Movie' : 'Add a Movie' }}
+      </h3>
 
       <input class = "input" v-model="title" placeholder="Title"/>
 
@@ -91,7 +145,14 @@ onMounted(() => {
 
       <textarea class="input" v-model="review" rows="3" placeholder="Write a review..."></textarea>
 
-      <button class = "add-btn" @click="createMovie"> Add Movie</button>
+      <button class="add-btn" @click="editingId ? updateMovie() : createMovie()">
+        {{ editingId ? 'Save Changes' : 'Add Movie' }}
+      </button>
+
+      <button v-if="editingId" class="cancel-btn" @click="cancelEdit">
+        Cancel
+      </button>
+
     </div>
 
     <div v-if="error" class="error">{{ error }}</div>
@@ -102,6 +163,7 @@ onMounted(() => {
         :key="movie.id"
         :movie="movie"
         @delete="deleteMovie"
+        @edit="startEdit"
       />
     </div>
 
@@ -170,7 +232,20 @@ onMounted(() => {
   border-radius: 8px;
   cursor: pointer;
   font-weight: bold;
-
-
 }
+.cancel-btn {
+  padding: 0.75rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  background-color: #95a5a6;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background-color: #7f8c8d;
+}
+
+
 </style>
