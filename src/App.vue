@@ -167,6 +167,10 @@ body {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.35);
+
+  pointer-events: none;
+  z-index: 0;
+
 }
 
 .app-header {
@@ -174,6 +178,9 @@ body {
   padding: 1.5rem 2rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   text-align: center;
+
+  position: relative;
+  z-index: 1;
 }
 
 .app-header h1 {
