@@ -5,6 +5,9 @@ export interface Movie {
   releaseYear: number
   rating: number
   review: string
+
+  username?: string
+
 }
 
 defineProps<{

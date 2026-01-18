@@ -1,25 +1,26 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import MovieItem from './MovieItem.vue'
 import type { Movie } from './MovieItem.vue'
 import axios from 'axios'
 
+
+const props = defineProps<{
+  username: string
+}>()
+
 const movies = ref<Movie[]>([])
 const error = ref<string>('')
 
-const API_BASE = 'https://backend-movieapp-mh3p.onrender.com/movies'
 
-//Login State
-const username = ref(localStorage.getItem('username') || '')
-const password = ref('')
-const isLoggedIn = ref(!!username.value)
+const API_ROOT = 'https://backend-movieapp-mh3p.onrender.com'
+const MOVIES_URL = `${API_ROOT}/movies`
 
 const title = ref('')
 const releaseYear = ref<number>(new Date().getFullYear())
 const rating = ref<number>(3)
 const review = ref('')
 const editingId = ref<number | null>(null)
-
 
 function resetForm() {
   title.value = ''
@@ -29,97 +30,58 @@ function resetForm() {
   editingId.value = null
 }
 
-//Auth
-async function register() {
-  try {
-    await axios.post(`${API_BASE}/auth/register`, {
-      username: username.value,
-      password: password.value,
-    })
-    error.value = 'Registered successfully! You can now login.'
-  } catch {
-    error.value = 'Registration failed'
-  }
-}
-
-async function login() {
-  try {
-    const res = await axios.post(`${API_BASE}/auth/login`, {
-      username: username.value,
-      password: password.value,
-    })
-
-    if (res.data === 'Login successful') {
-      localStorage.setItem('username', username.value)
-      isLoggedIn.value = true
-      fetchMovies()
-      error.value = ''
-    } else {
-      error.value = res.data
-    }
-  } catch {
-    error.value = 'Login failed'
-  }
-}
-
-function logout() {
-  localStorage.removeItem('username')
-  isLoggedIn.value = false
-  movies.value = []
-}
-
-
-
 async function fetchMovies() {
   try {
-    const response = await axios.get(API_BASE)
+    const response = await axios.get(MOVIES_URL, {
+      params: { username: props.username },
+    })
     movies.value = response.data
+    error.value = ''
   } catch (err) {
     console.error('Failed to fetch movies:', err)
     error.value = 'Could not load movies. Please try again later.'
   }
 }
 
-async function createMovie(){
+async function createMovie() {
   try {
-    if (!title.value.trim()){
+    if (!title.value.trim()) {
       error.value = 'Please enter a title.'
       return
     }
+
     const payload = {
       title: title.value,
       releaseYear: releaseYear.value,
       rating: rating.value,
       review: review.value,
+      username: props.username,
     }
 
-    const response = await axios.post(API_BASE, payload)
+    const response = await axios.post(MOVIES_URL, payload)
     movies.value.push(response.data)
 
     resetForm()
-    error.value =''
+    error.value = ''
   } catch (err) {
-    console.error('Failed to add movie:',err)
+    console.error('Failed to add movie:', err)
     error.value = 'Could not add movie. Please try again later.'
   }
-
 }
+
 async function deleteMovie(id: number) {
   try {
-    await axios.delete(`${API_BASE}/${id}`)//remove from UI immediately
+    await axios.delete(`${MOVIES_URL}/${id}`)
     movies.value = movies.value.filter((m) => m.id !== id)
 
     if (editingId.value === id) resetForm()
     error.value = ''
-
-  }
-
-  catch (err) {
-    console.error('Failed to delete movie:',err)
+  } catch (err) {
+    console.error('Failed to delete movie:', err)
     error.value = 'Could not delete movie. Please try again later.'
   }
 }
-//
+
 function startEdit(movie: Movie) {
   editingId.value = movie.id
   title.value = movie.title
@@ -128,7 +90,6 @@ function startEdit(movie: Movie) {
   review.value = movie.review ?? ''
 }
 
-//
 async function updateMovie() {
   try {
     if (editingId.value === null) return
@@ -143,11 +104,11 @@ async function updateMovie() {
       releaseYear: releaseYear.value,
       rating: rating.value,
       review: review.value,
+      username: props.username,
     }
 
-    const response = await axios.put(`${API_BASE}/${editingId.value}`, payload)
+    const response = await axios.put(`${MOVIES_URL}/${editingId.value}`, payload)
 
-    //
     movies.value = movies.value.map((m) => (m.id === editingId.value ? response.data : m))
 
     resetForm()
@@ -157,42 +118,38 @@ async function updateMovie() {
     error.value = 'Could not update movie. Please try again later.'
   }
 }
+
 function cancelEdit() {
   resetForm()
 }
 
 onMounted(() => {
-  fetchMovies()
+  if (props.username) fetchMovies()
 })
+
+watch(
+  () => props.username,
+  (newUsername) => {
+    if (newUsername) fetchMovies()
+    else movies.value = []
+  }
+)
 </script>
 
 <template>
   <div class="movie-list">
+    <h2 class="list-title">Movie List</h2>
 
-    <!---Login-->
-
-    <div v-if="!isLoggedIn" class="add-box">
-      <h3>Login / Register</h3>
-
-      <input class="input" v-model="username" placeholder="Username" />
-      <input class="input" v-model="password" type="password" placeholder="Password" />
-
-      <button class="add-btn" @click="login">Login</button>
-      <button class="cancel-btn" @click="register">Register</button>
-    </div>
-
-    <h2 class="list-title">Movie List </h2>
-
-    <div class = "add-box">
+    <!-- ✅ CHANGE 6: remove login/register UI from here -->
+    <div class="add-box">
       <h3 class="add-title">
         {{ editingId ? 'Edit Movie' : 'Add a Movie' }}
       </h3>
 
-      <input class = "input" v-model="title" placeholder="Title"/>
+      <input class="input" v-model="title" placeholder="Title" />
+      <input class="input" v-model.number="releaseYear" type="number" placeholder="Release year" />
 
-      <input class = "input" v-model.number="releaseYear" type="number" placeholder=" Release year"/>
-
-      <select class = "input" v-model.number ="rating">
+      <select class="input" v-model.number="rating">
         <option :value="1">1</option>
         <option :value="2">2</option>
         <option :value="3">3</option>
@@ -209,7 +166,6 @@ onMounted(() => {
       <button v-if="editingId" class="cancel-btn" @click="cancelEdit">
         Cancel
       </button>
-
     </div>
 
     <div v-if="error" class="error">{{ error }}</div>
@@ -225,13 +181,12 @@ onMounted(() => {
     </div>
 
     <div v-else class="empty-state">
-      <p>No movies available. Please check back later!</p>
+      <p>No movies yet. Add your first one!</p>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* You can reuse the same styles as MovieList.vue */
 .movie-list {
   max-width: 800px;
   margin: 0 auto;
@@ -263,7 +218,8 @@ onMounted(() => {
   color: red;
   margin-bottom: 1rem;
 }
-.add-box{
+
+.add-box {
   background-color: rgba(255, 255, 255, 0.95);
   padding: 1rem;
   border-radius: 10px;
@@ -272,7 +228,8 @@ onMounted(() => {
   flex-direction: column;
   gap: 0.75rem;
 }
-.add-title{
+
+.add-title {
   margin: 0;
   color: #2c3e50;
 }
@@ -283,13 +240,15 @@ onMounted(() => {
   border: 1px solid #ddd;
   font-size: 1rem;
 }
-.add-btn{
+
+.add-btn {
   padding: 0.75rem;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-weight: bold;
 }
+
 .cancel-btn {
   padding: 0.75rem;
   border: none;
@@ -303,6 +262,4 @@ onMounted(() => {
 .cancel-btn:hover {
   background-color: #7f8c8d;
 }
-
-
 </style>
