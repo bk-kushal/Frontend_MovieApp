@@ -518,6 +518,18 @@ watch(
   gap: 0.85rem;
 }
 
+.filter-card .control {
+  align-items: flex-start;
+}
+
+.filter-card .input {
+  width: 170px;
+  height: 32px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.85rem;
+  border-radius: 8px;
+}
+
 .filter-head {
   display: flex;
   align-items: center;
