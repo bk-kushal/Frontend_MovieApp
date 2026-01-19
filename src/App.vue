@@ -27,6 +27,9 @@ function setUser(u: AuthUser) {
 }
 
 function logout() {
+  const ok = window.confirm('Are you sure you want to log out?')
+  if (!ok) return
+
   user.value = null
   localStorage.removeItem('movieapp_user')
   localStorage.removeItem('username')
@@ -86,8 +89,8 @@ async function submitAuth() {
       <section v-if="!user" class="auth-wrap">
         <div class="auth-card">
           <div class="auth-header">
-            <h2 class="auth-title">Welcome</h2>
-            <p class="auth-subtitle">Sign in to manage your movies</p>
+            <h2 class="auth-title">Track films you’ve watched</h2>
+            <p class="auth-subtitle">Sign in to manage your movies </p>
           </div>
 
           <div class="auth-tabs">
