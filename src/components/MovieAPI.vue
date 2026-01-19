@@ -4,7 +4,6 @@ import MovieItem from './MovieItem.vue'
 import type { Movie } from './MovieItem.vue'
 import axios from 'axios'
 
-
 const props = defineProps<{
   username: string
 }>()
@@ -12,9 +11,11 @@ const props = defineProps<{
 const movies = ref<Movie[]>([])
 const error = ref<string>('')
 
-
 const API_ROOT = 'https://backend-movieapp-mh3p.onrender.com'
 const MOVIES_URL = `${API_ROOT}/movies`
+
+// Form state
+const showForm = ref(false)
 
 const title = ref('')
 const releaseYear = ref<number>(new Date().getFullYear())
@@ -28,6 +29,18 @@ function resetForm() {
   rating.value = 3
   review.value = ''
   editingId.value = null
+}
+
+function openAddForm() {
+  resetForm()
+  error.value = ''
+  showForm.value = true
+}
+
+function closeForm() {
+  resetForm()
+  error.value = ''
+  showForm.value = false
 }
 
 async function fetchMovies() {
@@ -61,8 +74,7 @@ async function createMovie() {
     const response = await axios.post(MOVIES_URL, payload)
     movies.value.push(response.data)
 
-    resetForm()
-    error.value = ''
+    closeForm()
   } catch (err) {
     console.error('Failed to add movie:', err)
     error.value = 'Could not add movie. Please try again later.'
@@ -74,7 +86,8 @@ async function deleteMovie(id: number) {
     await axios.delete(`${MOVIES_URL}/${id}`)
     movies.value = movies.value.filter((m) => m.id !== id)
 
-    if (editingId.value === id) resetForm()
+    // if you deleted the one being edited, close the form
+    if (editingId.value === id) closeForm()
     error.value = ''
   } catch (err) {
     console.error('Failed to delete movie:', err)
@@ -83,6 +96,9 @@ async function deleteMovie(id: number) {
 }
 
 function startEdit(movie: Movie) {
+  showForm.value = true
+  error.value = ''
+
   editingId.value = movie.id
   title.value = movie.title
   releaseYear.value = movie.releaseYear
@@ -111,16 +127,11 @@ async function updateMovie() {
 
     movies.value = movies.value.map((m) => (m.id === editingId.value ? response.data : m))
 
-    resetForm()
-    error.value = ''
+    closeForm()
   } catch (err) {
     console.error('Failed to update movie:', err)
     error.value = 'Could not update movie. Please try again later.'
   }
-}
-
-function cancelEdit() {
-  resetForm()
 }
 
 onMounted(() => {
@@ -140,37 +151,63 @@ watch(
   <div class="movie-list">
     <h2 class="list-title">Movie List</h2>
 
-    <!-- ✅ CHANGE 6: remove login/register UI from here -->
-    <div class="add-box">
-      <h3 class="add-title">
-        {{ editingId ? 'Edit Movie' : 'Add a Movie' }}
-      </h3>
-
-      <input class="input" v-model="title" placeholder="Title" />
-      <input class="input" v-model.number="releaseYear" type="number" placeholder="Release year" />
-
-      <select class="input" v-model.number="rating">
-        <option :value="1">1</option>
-        <option :value="2">2</option>
-        <option :value="3">3</option>
-        <option :value="4">4</option>
-        <option :value="5">5</option>
-      </select>
-
-      <textarea class="input" v-model="review" rows="3" placeholder="Write a review..."></textarea>
-
-      <button class="add-btn" @click="editingId ? updateMovie() : createMovie()">
-        {{ editingId ? 'Save Changes' : 'Add Movie' }}
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <button v-if="!showForm" class="primary-btn" @click="openAddForm">
+        + Add a movie
       </button>
 
-      <button v-if="editingId" class="cancel-btn" @click="cancelEdit">
-        Cancel
-      </button>
+      <div v-else class="form-header">
+        <h3 class="form-title">{{ editingId ? 'Edit Movie' : 'Add a Movie' }}</h3>
+        <button class="ghost-btn" @click="closeForm">✕ Close</button>
+      </div>
     </div>
 
-    <div v-if="error" class="error">{{ error }}</div>
+    <!-- Form (only visible when showForm) -->
+    <div v-if="showForm" class="add-box">
+      <div class="grid">
+        <div class="field">
+          <label class="label">Title</label>
+          <input class="input" v-model="title" placeholder="e.g. Interstellar" />
+        </div>
 
-    <div v-else-if="movies.length > 0" class="movies-container">
+        <div class="field">
+          <label class="label">Release year</label>
+          <input class="input" v-model.number="releaseYear" type="number" />
+        </div>
+
+        <div class="field">
+          <label class="label">Rating</label>
+          <select class="input" v-model.number="rating">
+            <option :value="1">1</option>
+            <option :value="2">2</option>
+            <option :value="3">3</option>
+            <option :value="4">4</option>
+            <option :value="5">5</option>
+          </select>
+        </div>
+
+        <div class="field full">
+          <label class="label">Review</label>
+          <textarea class="input" v-model="review" rows="3" placeholder="Write a short review..."></textarea>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="primary-btn" @click="editingId ? updateMovie() : createMovie()">
+          {{ editingId ? 'Save Changes' : 'Add Movie' }}
+        </button>
+
+        <button class="secondary-btn" @click="closeForm">
+          Cancel
+        </button>
+      </div>
+
+      <div v-if="error" class="error">{{ error }}</div>
+    </div>
+
+    <!-- List -->
+    <div v-if="!error && movies.length > 0" class="movies-container">
       <MovieItem
         v-for="movie in movies"
         :key="movie.id"
@@ -180,7 +217,7 @@ watch(
       />
     </div>
 
-    <div v-else class="empty-state">
+    <div v-else-if="!error && movies.length === 0" class="empty-state">
       <p>No movies yet. Add your first one!</p>
     </div>
   </div>
@@ -188,7 +225,7 @@ watch(
 
 <style scoped>
 .movie-list {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 2rem;
 }
@@ -196,8 +233,131 @@ watch(
 .list-title {
   color: #2c3e50;
   font-size: 2rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   text-align: center;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.form-header {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.25rem 0.25rem;
+}
+
+.form-title {
+  margin: 0;
+  color: #2c3e50;
+}
+
+/* Buttons */
+.primary-btn {
+  padding: 0.85rem 1rem;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  background: #2c3e50;
+  color: white;
+}
+
+.primary-btn:hover {
+  opacity: 0.92;
+}
+
+.secondary-btn {
+  padding: 0.85rem 1rem;
+  border: 1px solid #d8dde3;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  background: white;
+  color: #2c3e50;
+}
+
+.secondary-btn:hover {
+  background: #f6f7f9;
+}
+
+.ghost-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 700;
+  color: #2c3e50;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+}
+
+.ghost-btn:hover {
+  background: rgba(44, 62, 80, 0.08);
+}
+
+/* Form card */
+.add-box {
+  background-color: rgba(255, 255, 255, 0.96);
+  padding: 1.25rem;
+  border-radius: 16px;
+  margin: 0 auto 1.5rem;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+  max-width: 900px;
+}
+
+/* Form layout */
+.grid {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr 0.6fr;
+  gap: 0.9rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field.full {
+  grid-column: 1 / -1;
+}
+
+.label {
+  font-size: 0.9rem;
+  color: #5b6773;
+  font-weight: 600;
+}
+
+.input {
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid #d8dde3;
+  font-size: 1rem;
+  outline: none;
+}
+
+.input:focus {
+  border-color: #2c3e50;
+}
+
+.actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.error {
+  margin-top: 0.75rem;
+  text-align: center;
+  color: #c0392b;
+  font-weight: 600;
 }
 
 .movies-container {
@@ -213,53 +373,13 @@ watch(
   font-size: 1.1rem;
 }
 
-.error {
-  text-align: center;
-  color: red;
-  margin-bottom: 1rem;
-}
-
-.add-box {
-  background-color: rgba(255, 255, 255, 0.95);
-  padding: 1rem;
-  border-radius: 10px;
-  margin-bottom: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.add-title {
-  margin: 0;
-  color: #2c3e50;
-}
-
-.input {
-  padding: 0.7rem;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  font-size: 1rem;
-}
-
-.add-btn {
-  padding: 0.75rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.cancel-btn {
-  padding: 0.75rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  background-color: #95a5a6;
-  color: white;
-}
-
-.cancel-btn:hover {
-  background-color: #7f8c8d;
+/* Responsive */
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .actions {
+    flex-direction: column;
+  }
 }
 </style>
