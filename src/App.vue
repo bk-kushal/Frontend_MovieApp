@@ -222,7 +222,7 @@ body {
   z-index: 0;
 
   opacity: 0;
-  transition: opacity 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: opacity 1600ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 /* vignette edges */
@@ -233,7 +233,7 @@ body {
   pointer-events: none;
   z-index: 0;
   opacity: 0;
-  transition: opacity 1100ms ease;
+  transition: opacity 1800ms ease;
 }
 
 /* fake film grain (subtle) */
@@ -245,7 +245,7 @@ body {
   opacity: 0;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.25'/%3E%3C/svg%3E");
   mix-blend-mode: overlay;
-  transition: opacity 900ms ease;
+  transition: opacity 1600ms ease;
 }
 
 .app.ready .hero::before,
