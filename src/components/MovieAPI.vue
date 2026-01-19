@@ -451,10 +451,10 @@ watch(
 }
 
 .input {
-  padding: 0.75rem 0.85rem;
+  padding: 0.7rem 0.8rem;
   border-radius: 12px;
   border: 1px solid #d8dde3;
-  font-size: 1rem;
+  font-size: 0.92rem;
   outline: none;
   background: white;
 }
@@ -479,7 +479,7 @@ watch(
 /* Two-column layout */
 .layout {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: 1fr 220px;
   gap: 1.5rem;
   align-items: start;
 }
@@ -509,7 +509,7 @@ watch(
 .filter-card {
   background: rgba(255, 255, 255, 0.96);
   border-radius: 16px;
-  padding: 1.1rem;
+  padding: 0.9rem;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
   position: sticky;
   top: 1rem;
