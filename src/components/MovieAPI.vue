@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import MovieItem from './MovieItem.vue'
 import type { Movie } from './MovieItem.vue'
 import axios from 'axios'
@@ -14,7 +14,6 @@ const error = ref<string>('')
 const API_ROOT = 'https://backend-movieapp-mh3p.onrender.com'
 const MOVIES_URL = `${API_ROOT}/movies`
 
-// Form state
 const showForm = ref(false)
 
 const title = ref('')
@@ -42,6 +41,67 @@ function closeForm() {
   error.value = ''
   showForm.value = false
 }
+
+
+// Sorting + Filtering state
+type SortMode = 'newest' | 'oldest' | 'ratingHigh' | 'ratingLow' | 'titleAZ' | 'titleZA'
+const sortMode = ref<SortMode>('newest')
+
+const query = ref('') // search in title + review
+const minRating = ref<number>(0) // 0..5
+const yearFrom = ref<number | ''>('')
+const yearTo = ref<number | ''>('')
+
+function clearFilters() {
+  query.value = ''
+  minRating.value = 0
+  yearFrom.value = ''
+  yearTo.value = ''
+  sortMode.value = 'newest'
+}
+
+const visibleMovies = computed(() => {
+  const q = query.value.trim().toLowerCase()
+
+  const yf = yearFrom.value === '' ? -Infinity : Number(yearFrom.value)
+  const yt = yearTo.value === '' ? Infinity : Number(yearTo.value)
+
+  // 1) filter
+  let list = movies.value.filter((m) => {
+    const titleText = (m.title ?? '').toLowerCase()
+    const reviewText = (m.review ?? '').toLowerCase()
+
+    const inText = q === '' || titleText.includes(q) || reviewText.includes(q)
+    const inRating = (m.rating ?? 0) >= minRating.value
+
+    const y = m.releaseYear ?? 0
+    const inYear = y >= yf && y <= yt
+
+    return inText && inRating && inYear
+  })
+
+  // 2) sort
+  const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
+
+  list = [...list].sort((a, b) => {
+    switch (sortMode.value) {
+      case 'newest':
+        return (b.releaseYear ?? 0) - (a.releaseYear ?? 0)
+      case 'oldest':
+        return (a.releaseYear ?? 0) - (b.releaseYear ?? 0)
+      case 'ratingHigh':
+        return (b.rating ?? 0) - (a.rating ?? 0)
+      case 'ratingLow':
+        return (a.rating ?? 0) - (b.rating ?? 0)
+      case 'titleAZ':
+        return collator.compare(a.title ?? '', b.title ?? '')
+      case 'titleZA':
+        return collator.compare(b.title ?? '', a.title ?? '')
+    }
+  })
+
+  return list
+})
 
 async function fetchMovies() {
   try {
@@ -151,7 +211,6 @@ watch(
   <div class="movie-list">
     <h2 class="list-title">Movie List</h2>
 
-    <!-- Toolbar -->
     <div class="toolbar">
       <button v-if="!showForm" class="primary-btn" @click="openAddForm">
         + Add a movie
@@ -163,7 +222,55 @@ watch(
       </div>
     </div>
 
-    <!-- Form (only visible when showForm) -->
+    <!-- Sorting + Filtering Controls -->
+    <div class="controls">
+      <div class="control">
+        <label class="label">Search</label>
+        <input class="input" v-model="query" placeholder="Search title or review..." />
+      </div>
+
+      <div class="control">
+        <label class="label">Sort</label>
+        <select class="input" v-model="sortMode">
+          <option value="newest">Release year (newest)</option>
+          <option value="oldest">Release year (oldest)</option>
+          <option value="ratingHigh">Rating (high → low)</option>
+          <option value="ratingLow">Rating (low → high)</option>
+          <option value="titleAZ">Title (A → Z)</option>
+          <option value="titleZA">Title (Z → A)</option>
+        </select>
+      </div>
+
+      <div class="control">
+        <label class="label">Min rating</label>
+        <select class="input" v-model.number="minRating">
+          <option :value="0">Any</option>
+          <option :value="1">1+</option>
+          <option :value="2">2+</option>
+          <option :value="3">3+</option>
+          <option :value="4">4+</option>
+          <option :value="5">5 only</option>
+        </select>
+      </div>
+
+      <div class="control">
+        <label class="label">Year from</label>
+        <input class="input" v-model.number="yearFrom" type="number" placeholder="e.g. 2000" />
+      </div>
+
+      <div class="control">
+        <label class="label">Year to</label>
+        <input class="input" v-model.number="yearTo" type="number" placeholder="e.g. 2026" />
+      </div>
+
+      <div class="control clear">
+        <label class="label">&nbsp;</label>
+        <button class="secondary-btn" type="button" @click="clearFilters">
+          Clear
+        </button>
+      </div>
+    </div>
+
     <div v-if="showForm" class="add-box">
       <div class="grid">
         <div class="field">
@@ -207,9 +314,9 @@ watch(
     </div>
 
     <!-- List -->
-    <div v-if="!error && movies.length > 0" class="movies-container">
+    <div v-if="!error && visibleMovies.length > 0" class="movies-container">
       <MovieItem
-        v-for="movie in movies"
+        v-for="movie in visibleMovies"
         :key="movie.id"
         :movie="movie"
         @delete="deleteMovie"
@@ -217,8 +324,8 @@ watch(
       />
     </div>
 
-    <div v-else-if="!error && movies.length === 0" class="empty-state">
-      <p>No movies yet. Add your first one!</p>
+    <div v-else-if="!error && visibleMovies.length === 0" class="empty-state">
+      <p>No movies match your filters. Try clearing them.</p>
     </div>
   </div>
 </template>
@@ -302,6 +409,37 @@ watch(
   background: rgba(44, 62, 80, 0.08);
 }
 
+/* Controls (sorting/filtering) */
+.controls {
+  max-width: 900px;
+  margin: 0 auto 1rem;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 0.8fr 0.7fr 0.7fr 0.6fr;
+  gap: 0.75rem;
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.control.clear {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 900px) {
+  .controls {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 540px) {
+  .controls {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Form card */
 .add-box {
   background-color: rgba(255, 255, 255, 0.96);
@@ -373,7 +511,7 @@ watch(
   font-size: 1.1rem;
 }
 
-/* Responsive */
+/* Responsive form */
 @media (max-width: 720px) {
   .grid {
     grid-template-columns: 1fr;
