@@ -42,13 +42,12 @@ function closeForm() {
   showForm.value = false
 }
 
-
 // Sorting + Filtering state
 type SortMode = 'newest' | 'oldest' | 'ratingHigh' | 'ratingLow' | 'titleAZ' | 'titleZA'
 const sortMode = ref<SortMode>('newest')
 
-const query = ref('') // search in title + review
-const minRating = ref<number>(0) // 0..5
+const query = ref('')
+const minRating = ref<number>(0)
 const yearFrom = ref<number | ''>('')
 const yearTo = ref<number | ''>('')
 
@@ -62,11 +61,9 @@ function clearFilters() {
 
 const visibleMovies = computed(() => {
   const q = query.value.trim().toLowerCase()
-
   const yf = yearFrom.value === '' ? -Infinity : Number(yearFrom.value)
   const yt = yearTo.value === '' ? Infinity : Number(yearTo.value)
 
-  // 1) filter
   let list = movies.value.filter((m) => {
     const titleText = (m.title ?? '').toLowerCase()
     const reviewText = (m.review ?? '').toLowerCase()
@@ -80,7 +77,6 @@ const visibleMovies = computed(() => {
     return inText && inRating && inYear
   })
 
-  // 2) sort
   const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
 
   list = [...list].sort((a, b) => {
@@ -146,7 +142,6 @@ async function deleteMovie(id: number) {
     await axios.delete(`${MOVIES_URL}/${id}`)
     movies.value = movies.value.filter((m) => m.id !== id)
 
-    // if you deleted the one being edited, close the form
     if (editingId.value === id) closeForm()
     error.value = ''
   } catch (err) {
@@ -222,55 +217,7 @@ watch(
       </div>
     </div>
 
-    <!-- Sorting + Filtering Controls -->
-    <div class="controls">
-      <div class="control">
-        <label class="label">Search</label>
-        <input class="input" v-model="query" placeholder="Search title or review..." />
-      </div>
-
-      <div class="control">
-        <label class="label">Sort</label>
-        <select class="input" v-model="sortMode">
-          <option value="newest">Release year (newest)</option>
-          <option value="oldest">Release year (oldest)</option>
-          <option value="ratingHigh">Rating (high → low)</option>
-          <option value="ratingLow">Rating (low → high)</option>
-          <option value="titleAZ">Title (A → Z)</option>
-          <option value="titleZA">Title (Z → A)</option>
-        </select>
-      </div>
-
-      <div class="control">
-        <label class="label">Min rating</label>
-        <select class="input" v-model.number="minRating">
-          <option :value="0">Any</option>
-          <option :value="1">1+</option>
-          <option :value="2">2+</option>
-          <option :value="3">3+</option>
-          <option :value="4">4+</option>
-          <option :value="5">5 only</option>
-        </select>
-      </div>
-
-      <div class="control">
-        <label class="label">Year from</label>
-        <input class="input" v-model.number="yearFrom" type="number" placeholder="e.g. 2000" />
-      </div>
-
-      <div class="control">
-        <label class="label">Year to</label>
-        <input class="input" v-model.number="yearTo" type="number" placeholder="e.g. 2026" />
-      </div>
-
-      <div class="control clear">
-        <label class="label">&nbsp;</label>
-        <button class="secondary-btn" type="button" @click="clearFilters">
-          Clear
-        </button>
-      </div>
-    </div>
-
+    <!-- Form (only visible when showForm) -->
     <div v-if="showForm" class="add-box">
       <div class="grid">
         <div class="field">
@@ -313,26 +260,88 @@ watch(
       <div v-if="error" class="error">{{ error }}</div>
     </div>
 
-    <!-- List -->
-    <div v-if="!error && visibleMovies.length > 0" class="movies-container">
-      <MovieItem
-        v-for="movie in visibleMovies"
-        :key="movie.id"
-        :movie="movie"
-        @delete="deleteMovie"
-        @edit="startEdit"
-      />
-    </div>
+    <!-- Two-column area: movies left, filters right -->
+    <div class="layout">
+      <!-- LEFT: Movies -->
+      <div class="list-column">
+        <div v-if="!error && visibleMovies.length > 0" class="movies-container">
+          <MovieItem
+            v-for="movie in visibleMovies"
+            :key="movie.id"
+            :movie="movie"
+            @delete="deleteMovie"
+            @edit="startEdit"
+          />
+        </div>
 
-    <div v-else-if="!error && visibleMovies.length === 0" class="empty-state">
-      <p>No movies match your filters. Try clearing them.</p>
+        <div v-else-if="!error && visibleMovies.length === 0" class="empty-state">
+          <p>No movies match your filters. Try clearing them.</p>
+        </div>
+
+        <div v-else-if="error" class="empty-state">
+          <p>{{ error }}</p>
+        </div>
+      </div>
+
+      <!-- RIGHT: Filters -->
+      <aside class="filter-column">
+        <div class="filter-card">
+          <div class="filter-head">
+            <h3 class="filter-title">Sort & Filter</h3>
+            <button class="chip-btn" type="button" @click="clearFilters">Clear</button>
+          </div>
+
+          <div class="control">
+            <label class="label">Search</label>
+            <input class="input" v-model="query" placeholder="Search title or review..." />
+          </div>
+
+          <div class="control">
+            <label class="label">Sort</label>
+            <select class="input" v-model="sortMode">
+              <option value="newest">Release year (newest)</option>
+              <option value="oldest">Release year (oldest)</option>
+              <option value="ratingHigh">Rating (high → low)</option>
+              <option value="ratingLow">Rating (low → high)</option>
+              <option value="titleAZ">Title (A → Z)</option>
+              <option value="titleZA">Title (Z → A)</option>
+            </select>
+          </div>
+
+          <div class="control">
+            <label class="label">Min rating</label>
+            <select class="input" v-model.number="minRating">
+              <option :value="0">Any</option>
+              <option :value="1">1+</option>
+              <option :value="2">2+</option>
+              <option :value="3">3+</option>
+              <option :value="4">4+</option>
+              <option :value="5">5 only</option>
+            </select>
+          </div>
+
+          <div class="control">
+            <label class="label">Year from</label>
+            <input class="input" v-model.number="yearFrom" type="number" placeholder="e.g. 2000" />
+          </div>
+
+          <div class="control">
+            <label class="label">Year to</label>
+            <input class="input" v-model.number="yearTo" type="number" placeholder="e.g. 2026" />
+          </div>
+
+          <div class="hint">
+            Showing <b>{{ visibleMovies.length }}</b> of <b>{{ movies.length }}</b>
+          </div>
+        </div>
+      </aside>
     </div>
   </div>
 </template>
 
 <style scoped>
 .movie-list {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
 }
@@ -353,7 +362,7 @@ watch(
 
 .form-header {
   width: 100%;
-  max-width: 900px;
+  max-width: 1200px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -409,48 +418,16 @@ watch(
   background: rgba(44, 62, 80, 0.08);
 }
 
-/* Controls (sorting/filtering) */
-.controls {
-  max-width: 900px;
-  margin: 0 auto 1rem;
-  display: grid;
-  grid-template-columns: 1.4fr 1fr 0.8fr 0.7fr 0.7fr 0.6fr;
-  gap: 0.75rem;
-}
-
-.control {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.control.clear {
-  display: flex;
-  justify-content: flex-end;
-}
-
-@media (max-width: 900px) {
-  .controls {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-@media (max-width: 540px) {
-  .controls {
-    grid-template-columns: 1fr;
-  }
-}
-
 /* Form card */
 .add-box {
   background-color: rgba(255, 255, 255, 0.96);
   padding: 1.25rem;
   border-radius: 16px;
-  margin: 0 auto 1.5rem;
+  margin: 0 auto 1.25rem;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
-  max-width: 900px;
+  max-width: 1200px;
 }
 
-/* Form layout */
 .grid {
   display: grid;
   grid-template-columns: 1.4fr 0.8fr 0.6fr;
@@ -479,6 +456,7 @@ watch(
   border: 1px solid #d8dde3;
   font-size: 1rem;
   outline: none;
+  background: white;
 }
 
 .input:focus {
@@ -498,6 +476,18 @@ watch(
   font-weight: 600;
 }
 
+/* Two-column layout */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.list-column {
+  min-width: 0;
+}
+
 .movies-container {
   display: flex;
   flex-direction: column;
@@ -511,11 +501,72 @@ watch(
   font-size: 1.1rem;
 }
 
-/* Responsive form */
-@media (max-width: 720px) {
+/* Filter panel */
+.filter-column {
+  position: relative;
+}
+
+.filter-card {
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 16px;
+  padding: 1.1rem;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.filter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.filter-title {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.chip-btn {
+  border: 1px solid rgba(44, 62, 80, 0.18);
+  background: rgba(44, 62, 80, 0.06);
+  color: #2c3e50;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.chip-btn:hover {
+  background: rgba(44, 62, 80, 0.1);
+}
+
+.hint {
+  margin-top: 0.25rem;
+  color: #6b7682;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-card {
+    position: static;
+  }
+
   .grid {
     grid-template-columns: 1fr;
   }
+
   .actions {
     flex-direction: column;
   }
